@@ -46,29 +46,29 @@ class NERFDataset(Dataset):
             self.imgPaths += imgPaths
             self.classCounts[cls] = len(imgPaths)
 
-        def __len__(self):
-            return len(self.imgPaths)
+    def __len__(self):
+        return len(self.imgPaths)
 
-        def __getitem__(self, idx):
-            imgPath = self.imgPaths[idx]
-            img = Image.open(imgPath)
-            img = img.convert('RGB')
+    def __getitem__(self, idx):
+        imgPath = self.imgPaths[idx]
+        img = Image.open(imgPath)
+        img = img.convert('RGB')
 
-            trans = transforms.Compose([
-                # replace None with Resize Transformation to make shapes uniform,
-                transforms.Resize((self.size, self.size)),
-                transforms.ToTensor(), # convert the PIL Image object into a Tensor
-                transforms.ConvertImageDtype(torch.float32),
-                # replace None with a Normalize transform (mean=[0.485, 0.457, 0.407], std=[0.5, 0.5, 0.5])
-                transforms.Normalize(mean=[0.485, 0.457, 0.407], std=[0.5, 0.5, 0.5]),
-            ])
-            img = trans(img)
-            img = torch.FloatTensor(img)
+        trans = transforms.Compose([
+            # replace None with Resize Transformation to make shapes uniform,
+            transforms.Resize((self.size, self.size)),
+            transforms.ToTensor(), # convert the PIL Image object into a Tensor
+            transforms.ConvertImageDtype(torch.float32),
+            # replace None with a Normalize transform (mean=[0.485, 0.457, 0.407], std=[0.5, 0.5, 0.5])
+            transforms.Normalize(mean=[0.485, 0.457, 0.407], std=[0.5, 0.5, 0.5]),
+        ])
+        img = trans(img)
+        img = torch.FloatTensor(img)
 
-            numClasses = len(self.classCounts)
-            labelIdx = CLASSES2IDX[self.labels[idx]]
-            onehot = F.one_hot(torch.Tensor([labelIdx]).to(torch.int64),
-                               num_classes=numClasses).reshape((-1)).to(torch.float32)
+        numClasses = len(self.classCounts)
+        labelIdx = CLASSES2IDX[self.labels[idx]]
+        onehot = F.one_hot(torch.Tensor([labelIdx]).to(torch.int64),
+                           num_classes=numClasses).reshape((-1)).to(torch.float32)
 
 
 class NERFDatasetLongTail(NERFDataset):
