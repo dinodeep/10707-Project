@@ -78,8 +78,8 @@ def createTrainingUtils(model):
 
 def evaluateDL(model, dl, lossfn):
 
-    avgLoss = 0
-    acc = 0
+    loss = 0
+    ncorrect = 0
     for x, y in dl:
         yhat = model(x)
 
@@ -89,11 +89,11 @@ def evaluateDL(model, dl, lossfn):
         # compute the number of correct samples
         labelHat = torch.argmax(yhat, dim=1)
         label = torch.argmax(y, dim=1)
-        acc += torch.sum(label == labelHat)
+        ncorrect += torch.sum(label == labelHat)
 
     nsamples = len(dl.dataset)
-    avgLoss /= nsamples
-    acc /= nsamples
+    avgLoss = loss / nsamples
+    acc = ncorrect / nsamples
 
     return acc, avgLoss
 
@@ -111,6 +111,8 @@ def train(model, trainDL, validDL, lossfn, opt, epochs=EPOCHS):
 
     trainLosses, trainAccs, validLosses, validAccs = [], [], [], []
 
+    evaluateDL(model, trainDL, lossfn)
+
     for e in range(EPOCHS):
         print(len(trainDL))
         for i, (x, y) in enumerate(trainDL):
@@ -127,7 +129,7 @@ def train(model, trainDL, validDL, lossfn, opt, epochs=EPOCHS):
             print(f"\t{i} done")
 
         # evaluate
-        trainLoss, trainAcc, validLoss, validAcc = evaluate(model, trainDL, validDL)
+        trainLoss, trainAcc, validLoss, validAcc = evaluate(model, trainDL, validDL, lossfn)
         trainLosses.append(trainLosses)
         trainAccs.append(trainAcc)
         validLosses.append(validLoss)
