@@ -70,6 +70,8 @@ class NERFDataset(Dataset):
         onehot = F.one_hot(torch.Tensor([labelIdx]).to(torch.int64),
                            num_classes=numClasses).reshape((-1)).to(torch.float32)
 
+        return img, onehot
+
 
 class NERFDatasetLongTail(NERFDataset):
     def __init__(self, path, split):
