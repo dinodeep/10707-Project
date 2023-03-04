@@ -72,6 +72,8 @@ class NERFDataset(Dataset):
         
         return img, onehot
 
+        return img, onehot
+
 
 class NERFDatasetLongTail(NERFDataset):
     def __init__(self, path, split):
