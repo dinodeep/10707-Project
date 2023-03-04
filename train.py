@@ -35,9 +35,9 @@ class CNN(nn.Module):
         )
 
         self.layer2 = nn.Sequential(
-            nn.Conv2d(in_channels=20, out_channels=30, kernel_size=(5, 5)),
+            nn.Conv2d(in_channels=20, out_channels=30, kernel_size=(11, 11)),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
+            nn.MaxPool2d(kernel_size=(2, 2), stride=(3, 3))
         )
 
         self.layer3 = nn.Sequential(
@@ -48,7 +48,7 @@ class CNN(nn.Module):
         )
 
         self.layer4 = nn.Sequential(
-            nn.Linear(in_features=28800, out_features=500),
+            nn.Linear(in_features=9800, out_features=500),
             nn.ReLU()
         )
 
@@ -72,7 +72,7 @@ def createTrainingUtils(model):
     trainDL = DataLoader(trainDS, batch_size=32, shuffle=False)
     validDL = DataLoader(validDS, batch_size=32, shuffle=False)
     lossfn = CrossEntropyLoss()
-    opt = SGD(model.parameters(), lr=0.01, momentum=0.9)
+    opt = SGD(model.parameters(), lr=0.005, momentum=0.9)
     return model, trainDS, validDS, trainDL, validDL, lossfn, opt
 
 
