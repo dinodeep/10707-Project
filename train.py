@@ -67,8 +67,8 @@ class CNN(nn.Module):
 
 
 def createTrainingUtils(model):
-    trainDS = NERFDataset(DATA_DIR, SPLITS[0])
-    validDS = NERFDataset(DATA_DIR, SPLITS[1])
+    trainDS = NERFDatasetLongTail(DATA_DIR, SPLITS[0])
+    validDS = NERFDatasetLongTail(DATA_DIR, SPLITS[1])
     trainDL = DataLoader(trainDS, batch_size=32, shuffle=False)
     validDL = DataLoader(validDS, batch_size=32, shuffle=False)
     lossfn = CrossEntropyLoss()
@@ -95,7 +95,7 @@ def evaluateDL(model, dl, lossfn):
     avgLoss = loss / nsamples
     acc = ncorrect / nsamples
 
-    return acc, avgLoss
+    return avgLoss, acc
 
 
 def evaluate(model, trainDL, validDL, lossfn):
@@ -119,10 +119,10 @@ def train(model, trainDL, validDL, lossfn, opt, epochs=EPOCHS):
 
             # forward pass
             yhat = model(x)
-
+            loss = lossfn(yhat, y)
             # backward pass
             opt.zero_grad()
-            loss = lossfn(yhat, y)
+            
             loss.backward()
             opt.step()
 
