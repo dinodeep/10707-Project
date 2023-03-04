@@ -29,15 +29,15 @@ class CNN(nn.Module):
         numClasses = len(CLASSES2IDX)
 
         self.layer1 = nn.Sequential(
-            nn.Conv2d(in_channels=numChannels, out_channels=20, kernel_size=(5, 5)),
+            nn.Conv2d(in_channels=numChannels, out_channels=20, kernel_size=(11, 11)),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2))
+            nn.MaxPool2d(kernel_size=(4, 4), stride=(4, 4))
         )
 
         self.layer2 = nn.Sequential(
             nn.Conv2d(in_channels=20, out_channels=30, kernel_size=(11, 11)),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(2, 2), stride=(3, 3))
+            nn.MaxPool2d(kernel_size=(4, 4), stride=(4, 4))
         )
 
         self.layer3 = nn.Sequential(
@@ -48,7 +48,7 @@ class CNN(nn.Module):
         )
 
         self.layer4 = nn.Sequential(
-            nn.Linear(in_features=9800, out_features=500),
+            nn.Linear(in_features=450, out_features=500),
             nn.ReLU()
         )
 
@@ -68,11 +68,11 @@ class CNN(nn.Module):
 
 def createTrainingUtils(model):
     trainDS = NERFDatasetLongTail(DATA_DIR, SPLITS[0])
-    validDS = NERFDatasetLongTail(DATA_DIR, SPLITS[1])
-    trainDL = DataLoader(trainDS, batch_size=32, shuffle=False)
-    validDL = DataLoader(validDS, batch_size=32, shuffle=False)
+    validDS = NERFDataset(DATA_DIR, SPLITS[1])
+    trainDL = DataLoader(trainDS, batch_size=32, shuffle=True)
+    validDL = DataLoader(validDS, batch_size=32, shuffle=True)
     lossfn = CrossEntropyLoss()
-    opt = SGD(model.parameters(), lr=0.005, momentum=0.9)
+    opt = SGD(model.parameters(), lr=0.01, momentum=0.9)
     return model, trainDS, validDS, trainDL, validDL, lossfn, opt
 
 
@@ -126,17 +126,26 @@ def train(model, trainDL, validDL, lossfn, opt, epochs=EPOCHS):
             loss.backward()
             opt.step()
 
-            print(f"\t{i} done")
+            # print(f"\t{i} done")
 
         # evaluate
         trainLoss, trainAcc, validLoss, validAcc = evaluate(model, trainDL, validDL, lossfn)
-        trainLosses.append(trainLosses)
-        trainAccs.append(trainAcc)
-        validLosses.append(validLoss)
-        validAccs.append(validAcc)
+        trainLosses.append(trainLoss.item())
+        trainAccs.append(trainAcc.item())
+        validLosses.append(validLoss.item())
+        validAccs.append(validAcc.item())
 
         print(trainLoss, trainAcc, validLoss, validAcc)
 
+    epochs = range(1, EPOCHS)
+    plt.plot(epochs, trainLosses, "r", label="Train")
+    plt.plot(epochs, validLosses, "b", label="Validation")
+    plt.title("Training and Validation Loss on Raw Data")
+    plt.xlabel("Epochs")
+    plt.ylabel("Loss")
+    plt.legend()
+    plt.savefig("raw_data_loss.png")
+    plt.show()
     return model, trainLoss, trainAcc, validLoss, validAcc
 
 
