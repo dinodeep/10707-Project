@@ -37,18 +37,18 @@ class CNN(nn.Module):
         self.layer2 = nn.Sequential(
             nn.Conv2d(in_channels=20, out_channels=30, kernel_size=(11, 11)),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(4, 4), stride=(4, 4))
+            nn.MaxPool2d(kernel_size=(5, 5), stride=(4, 4))
         )
 
         self.layer3 = nn.Sequential(
             nn.Conv2d(in_channels=30, out_channels=50, kernel_size=(5, 5)),
             nn.ReLU(),
-            nn.MaxPool2d(kernel_size=(2, 2), stride=(2, 2)),
+            nn.MaxPool2d(kernel_size=(6, 6), stride=(4, 4)),
             nn.Flatten(),
         )
 
         self.layer4 = nn.Sequential(
-            nn.Linear(in_features=450, out_features=500),
+            nn.Linear(in_features=50, out_features=500),
             nn.ReLU()
         )
 
@@ -67,7 +67,7 @@ class CNN(nn.Module):
 
 
 def createTrainingUtils(model):
-    trainDS = NERFDatasetLongTail(DATA_DIR, SPLITS[0])
+    trainDS = NERFDatasetSupersampled(DATA_DIR, SPLITS[0])
     validDS = NERFDataset(DATA_DIR, SPLITS[1])
     trainDL = DataLoader(trainDS, batch_size=32, shuffle=True)
     validDL = DataLoader(validDS, batch_size=32, shuffle=True)
@@ -84,7 +84,7 @@ def evaluateDL(model, dl, lossfn):
         yhat = model(x)
 
         # compute the loss
-        loss += lossfn(yhat, y)
+        loss += lossfn(yhat, y) * x.shape[0]
 
         # compute the number of correct samples
         labelHat = torch.argmax(yhat, dim=1)
@@ -111,8 +111,6 @@ def train(model, trainDL, validDL, lossfn, opt, epochs=EPOCHS):
 
     trainLosses, trainAccs, validLosses, validAccs = [], [], [], []
 
-    evaluateDL(model, trainDL, lossfn)
-
     for e in range(EPOCHS):
         for i, (x, y) in enumerate(trainDL):
 
@@ -133,10 +131,10 @@ def train(model, trainDL, validDL, lossfn, opt, epochs=EPOCHS):
 
         print(trainLoss, trainAcc, validLoss, validAcc)
 
-    epochs = range(EPOCHS)
+    epochs = range(1, EPOCHS + 1)
     plt.plot(epochs, trainLosses, "r", label="Train")
     plt.plot(epochs, validLosses, "b", label="Validation")
-    plt.title("Training and Validation Loss on Raw Data")
+    plt.title("Train Loss on Supersampled Data/Valid Loss on Balanced Data")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
