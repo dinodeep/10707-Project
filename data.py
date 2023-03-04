@@ -7,6 +7,8 @@ from torch.utils.data import Dataset, DataLoader
 from torch.optim import SGD
 from torch.nn import CrossEntropyLoss
 
+from torchvision import transforms
+
 SPLITS = ["train", "val", "test"]
 DATA_DIR = "nerf_synthetic"
 CLASSES2IDX = {cls: i for i, cls in enumerate(
@@ -60,4 +62,6 @@ class NERFDataset(Dataset):
 
     return img, onehot
 
-NERFDataset(DATA_DIR, SPLITS[0])
+
+if __name__ == "__main__":
+    NERFDataset(DATA_DIR, SPLITS[0])
