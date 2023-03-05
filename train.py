@@ -67,7 +67,7 @@ class CNN(nn.Module):
 
 
 def createTrainingUtils(model):
-    trainDS = NERFDatasetSupersampled(DATA_DIR, SPLITS[0])
+    trainDS = NERFDatasetSubsampled(DATA_DIR, SPLITS[0])
     validDS = NERFDataset(DATA_DIR, SPLITS[1])
     trainDL = DataLoader(trainDS, batch_size=32, shuffle=True)
     validDL = DataLoader(validDS, batch_size=32, shuffle=True)
@@ -134,11 +134,11 @@ def train(model, trainDL, validDL, lossfn, opt, epochs=EPOCHS):
     epochs = range(1, EPOCHS + 1)
     plt.plot(epochs, trainLosses, "r", label="Train")
     plt.plot(epochs, validLosses, "b", label="Validation")
-    plt.title("Train Loss on Supersampled Data/Valid Loss on Balanced Data")
+    plt.title("Train Loss on Undersampled Data/Valid Loss on Balanced Data")
     plt.xlabel("Epochs")
     plt.ylabel("Loss")
     plt.legend()
-    plt.savefig("raw_data_loss.png")
+    plt.savefig("subsampled.png")
     plt.show()
     return model, trainLoss, trainAcc, validLoss, validAcc
 
