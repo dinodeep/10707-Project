@@ -112,7 +112,6 @@ def train(model, trainDL, validDL, lossfn, opt, epochs=EPOCHS):
     trainLosses, trainAccs, validLosses, validAccs = [], [], [], []
 
     for e in range(EPOCHS):
-        print(len(trainDL))
         for i, (x, y) in enumerate(trainDL):
 
             # forward pass
@@ -120,11 +119,8 @@ def train(model, trainDL, validDL, lossfn, opt, epochs=EPOCHS):
             loss = lossfn(yhat, y)
             # backward pass
             opt.zero_grad()
-            
             loss.backward()
             opt.step()
-
-            # print(f"\t{i} done")
 
         # evaluate
         trainLoss, trainAcc, validLoss, validAcc = evaluate(model, trainDL, validDL, lossfn)
