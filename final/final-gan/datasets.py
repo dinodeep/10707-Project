@@ -12,6 +12,17 @@ from tqdm import tqdm
 import random
 import sys
 
+from networks import (
+    MLP_CGAN_RELU,
+    SMALL_MLP_CGAN_LEAKY,
+    MLP_CGAN_LEAKY,
+    BIG_MLP_CGAN_LEAKY,
+    DCCGAN,
+    Discriminator,
+    CNN,
+    LATENT_DIM
+)
+
 '''
 Versions of the MNIST dataset that this file should load
     1. original fashion mnist dataset
@@ -27,6 +38,7 @@ Versions of the MNIST dataset that this file should load
 '''
 
 SEED = 10707
+DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def get_transforms():
@@ -160,7 +172,7 @@ class FashionUpsampled(data.Dataset):
 
 class FashionModelRebalanced(data.Dataset):
 
-    def __init__(self, genpath, scale=0.5, train=True):
+    def __init__(self, genpath, gencls, scale=0.5, train=True):
         super().__init__()
 
         # load original dataset
@@ -169,13 +181,14 @@ class FashionModelRebalanced(data.Dataset):
         self.num_classes = len(list(self.ds.class2count.keys()))
         self.length = self.num_classes * self.largest_class_count
 
-        #! load model
-        self.model = None
+        G = gencls()
+        G.load_state_dict(torch.load(genpath, map_location=DEVICE))
+        G.eval()
 
         # for each class up-sample by generating images from a GAN
         self.images = []
         self.labels = []
-        for cls, idxs in self.ds.class2idx:
+        for cls, idxs in self.ds.class2idx.items():
             # add existing images
             num_existing = len(idxs)
             for idx in idxs:
@@ -184,8 +197,13 @@ class FashionModelRebalanced(data.Dataset):
 
             # supplement with generated images
             num_leftover = self.largest_class_count - num_existing
+
+            zs = torch.randn(num_leftover, LATENT_DIM)
+            labels = (torch.ones((num_leftover,)) * cls).to(torch.int64)
+            gen_images = G(zs, labels).detach()
+
             for i in range(num_leftover):
-                generated_image = None #! implement
+                generated_image = gen_images[i, :, :, :]
                 self.images.append(generated_image)
                 self.labels.append(cls)
 
@@ -214,8 +232,9 @@ def load_fashion_imbalanced(bs=128, scale=0.5):
 
 
 def load_fashion_rebalanced(cls, bs=128, scale=0.5):
-    ds_train = cls(train=True, scale=scale)
-    ds_valid = cls(train=True, scale=scale)
+    '''helper function for returning datasets/loaders that are rebalanced'''
+    ds_train = cls(scale=scale, train=True)
+    ds_valid = cls(scale=scale, train=False)
     dl_train = data.DataLoader(ds_train, batch_size=bs, shuffle=True, num_workers=4)
     dl_valid = data.DataLoader(ds_valid, batch_size=bs, shuffle=True, num_workers=4)
     return ds_train, dl_train, ds_valid, dl_valid
@@ -227,6 +246,13 @@ def load_fashion_downsampled(bs=128, scale=0.5):
 
 def load_fashion_upsampled(bs=128, scale=0.5):
     return load_fashion_rebalanced(FashionUpsampled, bs=bs, scale=scale)
+
+
+def load_fashion_gan(genpath, gencls, bs=128, scale=0.5):
+    '''helper function for returning datasets/loaders that are generated via gans'''
+    def load_model_ds(scale=scale, train=True):
+        return FashionModelRebalanced(genpath, gencls, scale=scale, train=train)
+    return load_fashion_rebalanced(load_model_ds, bs=bs, scale=scale)
 
 
 def get_class_counts(ds):
@@ -241,4 +267,10 @@ def get_class_counts(ds):
 
 
 if __name__ == "__main__":
-    ds_train, dl_train, ds_valid, dl_valid = load_fashion_imbalanced()
+    ds = FashionModelRebalanced("results_cgan/high_unbalanced_mlp_cgan_leaky_generator.pt", MLP_CGAN_LEAKY)
+
+    for i in [6000-1, 2*6000-1, 3*6000-1, 4*6000-1, 5*6000-1, 6*6000-1, 7*6000-1, 8*6000-1, 9*6000-1]:
+        image, label = ds[i]
+        image = (image + 1) / 2
+        plt.imshow(image.permute(1, 2, 0))
+        plt.show()

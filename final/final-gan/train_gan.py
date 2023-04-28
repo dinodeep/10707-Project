@@ -9,28 +9,42 @@ import torch.utils.data as data
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from networks import Generator, Discriminator
-from datasets import load_fashion_original, load_fashion_imbalanced
+from networks import (
+    MLP_CGAN_RELU,
+    SMALL_MLP_CGAN_LEAKY,
+    MLP_CGAN_LEAKY,
+    BIG_MLP_CGAN_LEAKY,
+    DCCGAN,
+    Discriminator,
+    LATENT_DIM
+)
+from datasets import load_fashion_original, load_fashion_imbalanced, load_fashion_upsampled
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 EPOCHS = 100
-LATENT_DIM = 100
-BATCH_SIZE = 100
+BATCH_SIZE = 256
+SAVE_EPOCH_INTERVAL = 5
 
 LOW_IMBALANCE_SCALE = 7/9
 HIGH_IMBALANCE_SCALE = 1/2
 
-ALL_METHODS = {
+# NOTE: we are training gans with upsampled datasets so that they learn the representation
+#       of unknown classes properly, as opposed to training them with some classes with few samples
+ALL_DATASETS = {
     "original": load_fashion_original,
-    "low-unbalanced": lambda bs: load_fashion_imbalanced(bs=bs, scale=LOW_IMBALANCE_SCALE),
-    "high-unbalanced": lambda bs: load_fashion_imbalanced(bs=bs, scale=HIGH_IMBALANCE_SCALE),
+    "low_unbalanced": lambda bs: load_fashion_upsampled(bs=bs, scale=LOW_IMBALANCE_SCALE),
+    "high_unbalanced": lambda bs: load_fashion_upsampled(bs=bs, scale=HIGH_IMBALANCE_SCALE),
 }
 
-METHOD = "original"
-GEN_SAVE_PATH = f"results_gan/{METHOD}_generator.pt"
-DISC_SAVE_PATH = f"results_gan/{METHOD}_discriminator.pt"
-SAVE_EPOCH_INTERVAL = 5
+ALL_GANS = {
+    "mlp_cgan_relu": MLP_CGAN_RELU,
+    "small_mlp_cgan_leaky": SMALL_MLP_CGAN_LEAKY,
+    "mlp_cgan_leaky": MLP_CGAN_LEAKY,
+    "big_mlp_cgan_leaky": BIG_MLP_CGAN_LEAKY,
+    # "mlp_cgan_diff_loss": None,
+    "dccgan_leaky": DCCGAN,
+}
 
 
 def save_predictions(G, noise, labels, save_path, nrow=10):
@@ -40,18 +54,21 @@ def save_predictions(G, noise, labels, save_path, nrow=10):
     torchvision.utils.save_image(images, save_path, nrow=nrow)
 
 
-def train():
-    _, dl, _, _ = ALL_METHODS[METHOD](bs=BATCH_SIZE)
+def train(DATASET, GAN):
+
+    GEN_SAVE_PATH = f"results_cgan/{DATASET}_{GAN}_generator.pt"
+    DISC_SAVE_PATH = f"results_cgan/{DATASET}_{GAN}_discriminator.pt"
+
+    _, dl, _, _ = ALL_DATASETS[DATASET](bs=BATCH_SIZE)
 
     # initialize everything for training
-    G = Generator().to(DEVICE)
+    G = ALL_GANS[GAN]().to(DEVICE)
     D = Discriminator().to(DEVICE)
 
     loss = torch.nn.BCELoss()
     g_opt = optim.Adam(G.parameters(), lr=0.0002)
     d_opt = optim.Adam(D.parameters(), lr=0.0002)
 
-    step = 0
     num_steps = EPOCHS * len(dl)
 
     # initialize models
@@ -64,8 +81,8 @@ def train():
                 real_labels = batch[1].to(DEVICE)
 
                 # create false predictions
-                noise = torch.randn(BATCH_SIZE, LATENT_DIM).to(DEVICE)
-                fake_labels = torch.randint(0, 10, (BATCH_SIZE,)).to(DEVICE)
+                noise = torch.randn(bs, LATENT_DIM).to(DEVICE)
+                fake_labels = torch.randint(0, 10, (bs,)).to(DEVICE)
                 gen_imgs = G(noise, fake_labels)
 
                 # discriminator update
@@ -74,7 +91,7 @@ def train():
 
                 d_opt.zero_grad()
                 d_real = D(real_imgs, real_labels).view(bs)
-                d_fake = D(gen_imgs.detach(), fake_labels).view(bs) #! why detach here?
+                d_fake = D(gen_imgs.detach(), fake_labels).view(bs)
 
                 loss_real = loss(d_real, disc_labels)
                 loss_fake = loss(d_fake, gen_labels)
@@ -99,5 +116,12 @@ def train():
                 torch.save(D.state_dict(), DISC_SAVE_PATH)
 
 
+def main():
+
+    for d in ALL_DATASETS.keys():
+        for g in ALL_GANS.keys():
+            train(d, g)
+
+
 if __name__ == "__main__":
-    train()
+    main()
