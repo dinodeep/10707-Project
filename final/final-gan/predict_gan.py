@@ -34,8 +34,16 @@ ALL_GANS = {
     "dccgan_leaky": DCCGAN,
 }
 
+'''
+    - class distribution for low imbalance and high imbalance
+    - 10 x 10 image of generated images for all gans (10 per class)
+    - final results table for all gans
+    - accuracy and loss plot for every baseline and mlp_cgan_leaky reuslts
+    - accuracy and loss plot for everything
+'''
 
-def main():
+
+def create_imgs():
     dataset = ALL_DATASETS[2]
     gan_str = "mlp_cgan_leaky"
 
@@ -50,6 +58,10 @@ def main():
         noise = torch.randn(NUM_PREDICTIONS, LATENT_DIM).to(DEVICE)
         labels = torch.ones(NUM_PREDICTIONS).to(torch.int64).to(DEVICE) * cls
         save_predictions(G, noise, labels, f"imgs/{dataset}_{gan_str}/class-{cls}.png", nrow=10)
+
+
+def main():
+    create_imgs()
 
 
 if __name__ == "__main__":

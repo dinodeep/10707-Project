@@ -34,7 +34,7 @@ from datasets import (
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-EPOCHS = 100 #! adjust to until convergence
+EPOCHS = 30 #! adjust to until convergence
 BATCH_SIZE = 100
 
 LOW_IMBALANCE_SCALE = 7/9
@@ -58,9 +58,6 @@ ALL_METHODS = {
     # "mlp_cgan_diff_loss": lambda bs: load_fashion_gan(f"results_cgan/{SCALE_STR}_mlp_cgan_diff_loss_generator.pt", None, bs=bs, scale=CHOSEN_SCALE),
     # "dccgan_leaky": lambda bs: load_fashion_gan(f"results_cgan/{SCALE_STR}_dccgan_leaky_generator.pt", DCCGAN, bs=bs, scale=CHOSEN_SCALE),
 }
-
-
-METHOD = "original"
 
 
 def evaluate(model, dl, lossfn):
@@ -129,35 +126,50 @@ def train(METHOD):
     train_losses, train_accs, test_losses, test_accs = [], [], [], []
     train_f1s, test_f1s = [], []
 
-    for i in range(EPOCHS):
-        for j, batch in enumerate(train_dl):
-            # unpack data
-            imgs = batch[0].to(DEVICE)
-            labels = batch[1].to(DEVICE)
+    # get initial results
+    train_acc, train_loss, train_f1 = evaluate(model, train_dl, lossfn)
+    test_acc, test_loss, test_f1 = evaluate(model, test_dl, lossfn)
+    train_losses.append(train_loss)
+    train_accs.append(train_acc)
+    train_f1s.append(train_f1)
+    test_losses.append(test_loss)
+    test_accs.append(test_acc)
+    test_f1s.append(test_f1)
+    print(
+        f"Initial Performance: train_acc={train_acc:.3f} train_loss={train_loss:.3f} train_f1={train_f1:.3f} test_acc={test_acc:.3f} test_loss={test_loss:.3f} test_f1={test_f1:.3f}")
 
-            # perform predictions and compute loss
-            yhat = model(imgs)
-            loss = lossfn(yhat, F.one_hot(labels, num_classes=10).to(torch.float32))
+    with tqdm(total=num_steps) as pbar:
+        for i in range(EPOCHS):
+            for j, batch in enumerate(train_dl):
+                # unpack data
+                imgs = batch[0].to(DEVICE)
+                labels = batch[1].to(DEVICE)
 
-            # update
-            opt.zero_grad()
-            loss.backward()
-            opt.step()
+                # perform predictions and compute loss
+                yhat = model(imgs)
+                loss = lossfn(yhat, F.one_hot(labels, num_classes=10).to(torch.float32))
 
-        # evaluate the model
-        if i % SAVE_EPOCH_INTERVAL == 0:
-            train_acc, train_loss, train_f1 = evaluate(model, train_dl, lossfn)
-            test_acc, test_loss, test_f1 = evaluate(model, test_dl, lossfn)
+                # update
+                opt.zero_grad()
+                loss.backward()
+                opt.step()
 
-            train_losses.append(train_loss)
-            train_accs.append(train_acc)
-            train_f1s.append(train_f1)
-            test_losses.append(test_loss)
-            test_accs.append(test_acc)
-            test_f1s.append(test_f1)
+                pbar.update()
 
-            print(f"Epoch {i}: train_acc={train_acc:.3f} train_loss={train_loss:.3f} train_f1={train_f1:.3f} test_acc={test_acc:.3f} test_loss={test_loss:.3f} test_f1={test_f1:.3f} -- saving model")
-            torch.save(model.state_dict(), CNN_SAVE_PATH)
+            # evaluate the model
+            if i % SAVE_EPOCH_INTERVAL == 0:
+                train_acc, train_loss, train_f1 = evaluate(model, train_dl, lossfn)
+                test_acc, test_loss, test_f1 = evaluate(model, test_dl, lossfn)
+
+                train_losses.append(train_loss)
+                train_accs.append(train_acc)
+                train_f1s.append(train_f1)
+                test_losses.append(test_loss)
+                test_accs.append(test_acc)
+                test_f1s.append(test_f1)
+
+                print(f"Epoch {i}: train_acc={train_acc:.3f} train_loss={train_loss:.3f} train_f1={train_f1:.3f} test_acc={test_acc:.3f} test_loss={test_loss:.3f} test_f1={test_f1:.3f} -- saving model")
+                torch.save(model.state_dict(), CNN_SAVE_PATH)
 
     # save all of the results to a pickle file
     with open(FINAL_SAVE_PATH, "wb") as f:
