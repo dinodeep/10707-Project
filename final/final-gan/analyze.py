@@ -188,28 +188,28 @@ def text_final_results():
 
 
 def main():
-    # gen_gan_imgs()
+    gen_gan_imgs()
 
     # skipping the high degree dataset
-    # acc_loss_plots(ALL_RESULTS[0:2] + ALL_RESULTS[3:6], "high_unbalanced", name="high-experiment-1.png")
-    # acc_loss_plots(ALL_RESULTS[0:2] + ALL_RESULTS[3:9], "high_unbalanced", name="high-experiment-2.png")
+    acc_loss_plots(ALL_RESULTS[0:2] + ALL_RESULTS[3:6], "high_unbalanced", name="high-experiment-1.png")
+    acc_loss_plots(ALL_RESULTS[0:2] + ALL_RESULTS[3:9], "high_unbalanced", name="high-experiment-2.png")
 
     # class distributions for low and high classes
-    # plot_class_distributions(ratio=1, upsampled=False, upsampling_method="", name="original-dataset.png")
-    # plot_class_distributions(ratio=LOW_IMBALANCE_SCALE, upsampled=False,
-    #                          upsampling_method="", name="low-imbalanced-dataset.png")
-    # plot_class_distributions(ratio=HIGH_IMBALANCE_SCALE, upsampled=False,
-    #                          upsampling_method="", name="high-imbalanced-dataset.png")
+    plot_class_distributions(ratio=1, upsampled=False, upsampling_method="", name="original-dataset.png")
+    plot_class_distributions(ratio=LOW_IMBALANCE_SCALE, upsampled=False,
+                             upsampling_method="", name="low-imbalanced-dataset.png")
+    plot_class_distributions(ratio=HIGH_IMBALANCE_SCALE, upsampled=False,
+                             upsampling_method="", name="high-imbalanced-dataset.png")
 
-    # plot_class_distributions(ratio=LOW_IMBALANCE_SCALE, upsampled=True,
-    #                          upsampling_method="Copy or GAN", name="low-upsampled.png")
-    # plot_class_distributions(ratio=HIGH_IMBALANCE_SCALE, upsampled=True,
-    #                          upsampling_method="Copy or GAN", name="high-upsampled.png")
+    plot_class_distributions(ratio=LOW_IMBALANCE_SCALE, upsampled=True,
+                             upsampling_method="Copy or GAN", name="low-upsampled.png")
+    plot_class_distributions(ratio=HIGH_IMBALANCE_SCALE, upsampled=True,
+                             upsampling_method="Copy or GAN", name="high-upsampled.png")
 
-    # plot_class_distributions(ratio=LOW_IMBALANCE_SCALE, downsampled=True,
-    #                          upsampling_method="", name="low-downsampled.png")
-    # plot_class_distributions(ratio=HIGH_IMBALANCE_SCALE, downsampled=True,
-    #                          upsampling_method="", name="high-downsampled.png")
+    plot_class_distributions(ratio=LOW_IMBALANCE_SCALE, downsampled=True,
+                             upsampling_method="", name="low-downsampled.png")
+    plot_class_distributions(ratio=HIGH_IMBALANCE_SCALE, downsampled=True,
+                             upsampling_method="", name="high-downsampled.png")
 
     text_final_results()
 
