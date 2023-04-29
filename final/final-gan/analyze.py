@@ -167,12 +167,32 @@ def plot_class_distributions(ratio=1, upsampled=False, downsampled=False, upsamp
     return
 
 
+def text_final_results():
+
+    dataset = ["low_unbalanced", "high_unbalanced"]
+    results = ALL_RESULTS
+
+    with open(f"writeup_results/final_results.txt", "w") as f:
+        for d in dataset:
+            for r in results:
+                file = f"results_cnn/{d}_{r}_results.pkl"
+                with open(file, "rb") as f_data:
+                    data = pickle.load(f_data)
+                    final_test_loss = data["test_losses"][-1]
+                    final_test_acc = data["test_accs"][-1]
+                    final_test_fids = data["test_f1s"][-1]
+
+                    f.write(f"{d} & {r} & {final_test_loss:.3f} & {final_test_acc:.3f} & {final_test_fids:.3f}\\\\ \n")
+
+    return
+
+
 def main():
     # gen_gan_imgs()
 
     # skipping the high degree dataset
-    acc_loss_plots(ALL_RESULTS[0:2] + ALL_RESULTS[3:6], "high_unbalanced", name="high-experiment-1.png")
-    acc_loss_plots(ALL_RESULTS[0:2] + ALL_RESULTS[3:9], "high_unbalanced", name="high-experiment-2.png")
+    # acc_loss_plots(ALL_RESULTS[0:2] + ALL_RESULTS[3:6], "high_unbalanced", name="high-experiment-1.png")
+    # acc_loss_plots(ALL_RESULTS[0:2] + ALL_RESULTS[3:9], "high_unbalanced", name="high-experiment-2.png")
 
     # class distributions for low and high classes
     # plot_class_distributions(ratio=1, upsampled=False, upsampling_method="", name="original-dataset.png")
@@ -190,6 +210,8 @@ def main():
     #                          upsampling_method="", name="low-downsampled.png")
     # plot_class_distributions(ratio=HIGH_IMBALANCE_SCALE, downsampled=True,
     #                          upsampling_method="", name="high-downsampled.png")
+
+    text_final_results()
 
 
 if __name__ == "__main__":
